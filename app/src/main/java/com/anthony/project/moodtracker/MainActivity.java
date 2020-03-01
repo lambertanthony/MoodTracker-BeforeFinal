@@ -114,6 +114,16 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        historicButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(getApplicationContext(), HistoricActivity.class));
+            }
+        });
+
+
+
+
     }
 
 
