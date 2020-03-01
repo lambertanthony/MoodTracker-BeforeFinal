@@ -4,6 +4,8 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
 
+import android.app.Application;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
@@ -31,15 +33,39 @@ public class MainActivity extends AppCompatActivity {
     private Button historicButton;
     private Button addMoodButton;
     private TextView text_view;
+    private ArrayList<Mood> moodsData;
+    SingletonMoodsData singletonMoodsData  = SingletonMoodsData.getInstance(); ;
+    private MoodsPersistence moodsPersistence;
     public static final int[] tableauImg = new int[]{ R.drawable.smiley_sad, R.drawable.smiley_disappointed, R.drawable.smiley_normal, R.drawable.smiley_happy, R.drawable.smiley_super_happy};
 
     public static final int[] tableauFnd = new int[]{R.color.faded_red, R.color.warm_grey, R.color.cornflower_blue_65, R.color.light_sage, R.color.banana_yellow};
+
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         AndroidThreeTen.init(this);
         setContentView(R.layout.activity_main);
+        //singletonMoodsData = SingletonMoodsData.getInstance();
+        moodsPersistence = MoodsPersistence.getInstance(this);
+        //MoodsPersistence.removeAll();
+        singletonMoodsData.setArray(moodsPersistence.getMoodsData());
+        System.out.println("Test moods:" +moodsPersistence.getMoodsData().toString());
+        singletonMoodsData.getWeeklyMood();
+
+
+
+
+
+
+
+
         viewPager2 = findViewById(R.id.viewPager2);
         historicButton = findViewById(R.id.btnHist);
         addMoodButton = findViewById(R.id.btnComm);
@@ -71,6 +97,8 @@ public class MainActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialogInterface, int i) {
                       String   comment = commentInput.getText().toString();
                         //saveData();
+                        System.out.println("Mood before save : " +new Mood(viewPager2.getCurrentItem(),comment, LocalDate.now()).toString());
+                        singletonMoodsData.addToArray(new Mood(viewPager2.getCurrentItem(),comment, LocalDate.now()));
                         Toast.makeText(MainActivity.this, comment, Toast.LENGTH_LONG).show();
                     }
                 });
@@ -87,6 +115,18 @@ public class MainActivity extends AppCompatActivity {
         });
 
     }
+
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        singletonMoodsData.getWeeklyMood();
+        moodsPersistence = MoodsPersistence.getInstance(this);
+        moodsPersistence.saveMoodsData(singletonMoodsData.getArray());
+
+    }
+
+
 
 
     }

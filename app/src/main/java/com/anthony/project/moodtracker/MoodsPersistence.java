@@ -2,6 +2,7 @@ package com.anthony.project.moodtracker;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -19,56 +20,74 @@ public class MoodsPersistence {
     private static final String FILE_NAME = "moods.xml";
     private static final String MOODS_DATA = "moods_data";
 
-    public MoodsPersistence() {
-        super();
+    private static MoodsPersistence moodsPersistenceInstance;
+    private static SharedPreferences sharedPreferences;
+    private static SharedPreferences.Editor sharedPreferencesEditor;
+
+    private MoodsPersistence(Context context) {
+        if(sharedPreferences == null){
+            sharedPreferences = context.getSharedPreferences(context.getPackageName()+"."+FILE_NAME, Context.MODE_PRIVATE);
+        }
     }
 
-    public void saveMoodsData(Context context, ArrayList<Mood> moodsData) {
-        SharedPreferences settings;
-        SharedPreferences.Editor editor;
-        settings = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE);
-        editor = settings.edit();
+    public static synchronized MoodsPersistence getInstance(Context context) {
+        if(moodsPersistenceInstance == null) moodsPersistenceInstance = new MoodsPersistence(context);
+        return moodsPersistenceInstance;
+    }
+
+    public void saveMoodsData(ArrayList<Mood> moodsData) {
+        sharedPreferencesEditor = sharedPreferences.edit();
         Gson gson = new Gson();
-        Type moodsListType = new TypeToken<ArrayList<Mood>>() {
-        }.getType();
+        Type moodsListType = new TypeToken<ArrayList<Mood>>() {}.getType();
         String moods_data = gson.toJson(moodsData, moodsListType);
-        editor.putString(MOODS_DATA, moods_data);
-        editor.apply();
+        sharedPreferencesEditor.putString(MOODS_DATA, moods_data);
+        sharedPreferencesEditor.apply();
+    }
+    public static void removeAll() {
+        try {
+            if(sharedPreferences != null) {
+
+                sharedPreferencesEditor = sharedPreferences.edit();
+                sharedPreferencesEditor.clear();
+                sharedPreferencesEditor.apply();
+            }
+        }catch (Exception e){e.printStackTrace();}
     }
 
+    public ArrayList<Mood> getMoodsData() {
 
-    public ArrayList<Mood> getMoodsData(Context context) {
-        SharedPreferences settings;
         ArrayList<Mood> moodsData;
-        settings = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE);
+        String jsonMoodsData = sharedPreferences.getString(MOODS_DATA,null);
+        Log.i("json string " ,"json " +jsonMoodsData );
+        if (jsonMoodsData == null) {
+            return createEmptyMoodsData();
 
-        if (settings.contains(MOODS_DATA)) {
-            String jsonMoodsData = settings.getString(MOODS_DATA, null);
+        } else {
             GsonBuilder builder = new GsonBuilder();
             builder.setPrettyPrinting();
             builder.disableHtmlEscaping();
             Gson gson = builder.create();
-            Type moodsListType = new TypeToken<ArrayList<Mood>>() {
-            }.getType();
+            Type moodsListType = new TypeToken<ArrayList<Mood>>() {}.getType();
             moodsData = gson.fromJson(jsonMoodsData, moodsListType);
-        } else {
-            return createEmptyMoodsData();
-        }
-        return moodsData;
-    }
+            return moodsData;
 
-    private ArrayList<Mood> createEmptyMoodsData() {
-        ArrayList<Mood> tempMood = new ArrayList<>();
-        List<LocalDate> listOfDate = getDatesBetween();
-        for (int i = 0; i < listOfDate.size(); i++) {
-            tempMood.add(new Mood(listOfDate.get(i)));
 
         }
-
-        return tempMood;
-
     }
-}
+
+        private ArrayList<Mood> createEmptyMoodsData () {
+            ArrayList<Mood> tempMood = new ArrayList<>();
+            List<LocalDate> listOfDate = getDatesBetween();
+            for (int i = 0; i < listOfDate.size(); i++) {
+                tempMood.add(new Mood(listOfDate.get(i)));
+
+            }
+
+            return tempMood;
+
+        }
+    }
+
 
 
 
